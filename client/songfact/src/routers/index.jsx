@@ -8,7 +8,7 @@ import BaseLayout from "../views/BaseLayout";
 import Profile from "../views/Profile";
 import Toastify from "toastify-js";
 
-const url = "http://localhost:3000";
+const url = "https://songfacts.davidaprian.online";
 
 const router = createBrowserRouter([
   {
