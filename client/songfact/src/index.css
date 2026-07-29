@@ -1,3 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0a0a0a;
+  color: #e5e7eb;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #141414;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3c8f82;
+  border-radius: 3px;
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+
+  .glass-hover {
+    @apply hover:bg-white/10 hover:border-white/20 transition-all duration-200;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-teal-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent;
+  }
+
+  .btn-glow {
+    @apply relative overflow-hidden;
+  }
+
+  .btn-glow::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-teal-500 to-cyan-500 opacity-0 transition-opacity duration-300;
+  }
+
+  .btn-glow:hover::before {
+    @apply opacity-100;
+  }
+
+  .shimmer {
+    @apply bg-gradient-to-r from-dark-800 via-dark-700 to-dark-800 bg-[length:200%_100%] animate-pulse;
+  }
+
+  .song-row {
+    display: grid;
+    grid-template-columns: 40px 48px 1fr 1fr 40px;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+
+  .song-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .song-row .number {
+    color: #a0a0a0;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .song-row .thumbnail img {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+  }
+
+  .song-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .song-title {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .song-row:hover .song-title {
+    color: #5aa89a;
+  }
+
+  .song-artist {
+    color: #a0a0a0;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .song-album {
+    color: #a0a0a0;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-width: 768px) {
+  .song-row {
+    grid-template-columns: 24px 40px 1fr 40px !important;
+  }
+  .song-album {
+    display: none;
+  }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

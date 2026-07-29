@@ -1,13 +1,18 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Player from "../components/Player";
+import { PlayerProvider } from "../context/PlayerContext";
 
 export default function BaseLayout() {
   return (
-    <>
-      <div>
+    <PlayerProvider>
+      <div className="min-h-screen bg-dark-900">
         <Navbar />
-        <Outlet />
+        <main>
+          <Outlet />
+        </main>
+        <Player />
       </div>
-    </>
+    </PlayerProvider>
   );
 }
