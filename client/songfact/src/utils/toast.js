@@ -4,15 +4,15 @@ const toast = {
   success: (text) => {
     Toastify({
       text,
-      duration: 3000,
+      duration: 3500,
       gravity: "top",
       position: "right",
       style: {
-        background: "linear-gradient(135deg, #8B5CF6, #6366F1)",
+        background: "linear-gradient(135deg, #3c8f82, #2dd4bf)",
         color: "#fff",
         borderRadius: "12px",
         padding: "12px 20px",
-        boxShadow: "0 10px 40px rgba(139, 92, 246, 0.3)",
+        boxShadow: "0 10px 40px rgba(60, 143, 130, 0.3)",
         fontWeight: "600",
         fontSize: "14px",
       },
@@ -21,7 +21,7 @@ const toast = {
   error: (text) => {
     Toastify({
       text,
-      duration: 3000,
+      duration: 4000,
       gravity: "top",
       position: "right",
       style: {
@@ -38,15 +38,15 @@ const toast = {
   info: (text) => {
     Toastify({
       text,
-      duration: 3000,
+      duration: 3500,
       gravity: "top",
       position: "right",
       style: {
-        background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+        background: "linear-gradient(135deg, #3c8f82, #5aa89a)",
         color: "#fff",
         borderRadius: "12px",
         padding: "12px 20px",
-        boxShadow: "0 10px 40px rgba(59, 130, 246, 0.3)",
+        boxShadow: "0 10px 40px rgba(60, 143, 130, 0.3)",
         fontWeight: "600",
         fontSize: "14px",
       },
