@@ -509,11 +509,9 @@ function SongRow({ song, index, isFavorite, isAddingFav, onAddFavorite, onPlay, 
       </div>
       <span className="song-album hidden md:block">{song.album || "-"}</span>
       <div className="flex items-center justify-end gap-1">
-        {song.id && (
-          <button onClick={(e) => onQueue(e, song)} className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Add to queue">
-            <FaListUl size={12} />
-          </button>
-        )}
+        <button onClick={(e) => onQueue(e, song)} className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Add to queue">
+          <FaListUl size={12} />
+        </button>
         {song.id && (
           <button
             onClick={(e) => onAddFavorite(e, song)}

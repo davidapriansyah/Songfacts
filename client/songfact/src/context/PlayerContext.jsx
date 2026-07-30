@@ -45,9 +45,10 @@ export function PlayerProvider({ children }) {
   }, [setQueueSynced]);
 
   const addToQueue = useCallback((song) => {
-    if (!song.id) return;
+    if (!song.id && !song.videoId) return;
     setQueueSynced((prev) => {
-      if (prev.some((s) => s.id === song.id)) return prev;
+      const key = song.id || song.videoId;
+      if (prev.some((s) => (s.id || s.videoId) === key)) return prev;
       return [...prev, song];
     });
   }, [setQueueSynced]);
