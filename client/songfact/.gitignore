@@ -32,6 +32,6 @@ Thumbs.db
 *.sw?
 
 # Assets (local only)
-src/assets/*.png
+src/assets/example*.png
 
 
