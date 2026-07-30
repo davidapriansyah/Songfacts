@@ -198,7 +198,6 @@ export default function HomePage() {
   }, [search]);
 
   const handlePlaySong = async (song, songList, index) => {
-    // If song is from YouTube (no DB id), save to DB first
     let songToPlay = song;
     if (!song.id && song.videoId) {
       try {
@@ -210,6 +209,11 @@ export default function HomePage() {
           albumCover: song.albumCover || song.thumbnail,
         });
         songToPlay = { ...song, id: data.id, ...data };
+        setSongs((prev) =>
+          prev.map((s) =>
+            s.videoId === song.videoId ? { ...s, id: data.id } : s
+          )
+        );
       } catch (error) {
         console.error("Failed to save song:", error);
       } finally {
@@ -218,7 +222,6 @@ export default function HomePage() {
     }
 
     if (songList && index !== undefined && !isSearchMode) {
-      // Update the song in the list with the saved id
       const updatedList = songList.map((s, i) =>
         i === index ? songToPlay : s
       );

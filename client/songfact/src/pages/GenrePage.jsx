@@ -104,6 +104,11 @@ export default function GenrePage() {
           albumCover: song.albumCover || song.thumbnail,
         });
         songToPlay = { ...song, id: data.id, ...data };
+        setSongs((prev) =>
+          prev.map((s) =>
+            s.videoId === song.videoId ? { ...s, id: data.id } : s
+          )
+        );
       } catch (error) {
         console.error("Failed to save song:", error);
       } finally {
