@@ -18,7 +18,7 @@ import {
 export default function Funfact() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentSong, isPlaying, playSong, togglePlay, addToQueue, clearQueue, setRecommendations: setRecsForPlayer } =
+  const { currentSong, isPlaying, playSong, togglePlay, addToQueue, clearQueue, replaceQueue, setRecommendations: setRecsForPlayer } =
     usePlayer();
   const [song, setSong] = useState(null);
   const [funFacts, setFunFacts] = useState(null);
@@ -64,6 +64,7 @@ export default function Funfact() {
         setRecs(data);
         if (data.length > 0) {
           setRecsForPlayer(song.id, data);
+          replaceQueue(data);
         }
       })
       .catch(() => {})

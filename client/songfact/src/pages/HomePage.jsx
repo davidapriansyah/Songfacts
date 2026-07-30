@@ -260,6 +260,19 @@ export default function HomePage() {
   }, [currentPage, fetchSongs, fetchFavorites, fetchGenres, fetchAiRecommendations]);
 
   useEffect(() => {
+    if (searchResults) return;
+    const interval = setInterval(() => fetchSongs(currentPage), 60000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchSongs(currentPage);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [currentPage, fetchSongs, searchResults]);
+
+  useEffect(() => {
     const timer = setTimeout(() => handleSearch(), 500);
     return () => clearTimeout(timer);
   }, [search, handleSearch]);

@@ -21,6 +21,7 @@ export default function Player() {
   const {
     currentSong,
     isPlaying,
+    playKey,
     togglePlay,
     stopSong,
     setIsPlaying,
@@ -37,7 +38,6 @@ export default function Player() {
 
   const containerRef = useRef(null);
   const playerRef = useRef(null);
-  const prevVideoId = useRef(null);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
@@ -47,10 +47,6 @@ export default function Player() {
 
   useEffect(() => {
     if (!containerRef.current || !videoId) return;
-
-    if (prevVideoId.current === videoId && playerRef.current) return;
-
-    prevVideoId.current = videoId;
     setReady(false);
     setProgress(0);
     setDuration(0);
@@ -116,7 +112,7 @@ export default function Player() {
         playerRef.current = null;
       }
     };
-  }, [videoId]);
+  }, [videoId, playKey]);
 
   useEffect(() => {
     if (!ready || !playerRef.current) return;
@@ -147,7 +143,6 @@ export default function Player() {
       playerRef.current.destroy();
       playerRef.current = null;
     }
-    prevVideoId.current = null;
     setProgress(0);
     setDuration(0);
     setReady(false);

@@ -8,6 +8,7 @@ export function PlayerProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [queue, setQueue] = useState([]);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [playKey, setPlayKey] = useState(0);
   const recsMapRef = useRef({});
   const currentSongRef = useRef(null);
   const queueRef = useRef([]);
@@ -23,6 +24,9 @@ export function PlayerProvider({ children }) {
   }, []);
 
   const playSong = useCallback((song) => {
+    if (currentSongRef.current?.id === song.id) {
+      setPlayKey((k) => k + 1);
+    }
     setCurrentSong(song);
     currentSongRef.current = song;
     setIsPlaying(true);
@@ -77,6 +81,10 @@ export function PlayerProvider({ children }) {
   const setRecommendations = useCallback((songId, recs) => {
     recsMapRef.current[songId] = recs;
   }, []);
+
+  const replaceQueue = useCallback((songs) => {
+    setQueueSynced(songs);
+  }, [setQueueSynced]);
 
   // Always use the latest queue via ref
   onSongEndRef.current = async () => {
@@ -157,6 +165,7 @@ export function PlayerProvider({ children }) {
         currentSong,
         isPlaying,
         playSong,
+        playKey,
         togglePlay,
         stopSong,
         setIsPlaying,
@@ -169,6 +178,7 @@ export function PlayerProvider({ children }) {
         onSongEnd,
         playNextFromList,
         setRecommendations,
+        replaceQueue,
       }}
     >
       {children}
