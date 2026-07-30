@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { GoogleLogin } from "@react-oauth/google";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "../utils/toast";
 import logo from "../assets/logo.png";
+import api from "../services/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await axios.post("/api/auth/login", { email, password });
+      const { data } = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       toast.success("Welcome back!");
@@ -32,7 +32,7 @@ export default function Login() {
   async function googleLogin(codeResponse) {
     try {
       const payload = JSON.parse(atob(codeResponse.credential.split('.')[1]));
-      const { data } = await axios.post("/api/auth/login-google", {
+      const { data } = await api.post("/auth/login-google", {
         googleId: payload.sub,
         email: payload.email,
         profileImage: payload.picture,

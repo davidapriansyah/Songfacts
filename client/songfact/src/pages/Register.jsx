@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "../utils/toast";
 import logo from "../assets/logo.png";
+import api from "../services/api";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -16,7 +16,7 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("/api/auth/register", { email, password });
+      await api.post("/auth/register", { email, password });
       toast.success("Account created! Please sign in");
       navigate("/login");
     } catch (error) {
