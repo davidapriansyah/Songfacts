@@ -172,7 +172,7 @@ export default function Player() {
       <div ref={containerRef} className="hidden" />
 
       {queueOpen && (
-        <div className="absolute bottom-full right-0 w-80 max-h-80 bg-dark-800 border border-white/10 rounded-t-xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="absolute bottom-full right-0 w-80 max-w-full max-h-[40vh] bg-dark-800 border border-white/10 rounded-t-xl shadow-2xl overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <h3 className="text-white font-semibold text-sm">
               Queue{" "}
@@ -236,11 +236,11 @@ export default function Player() {
 
       <div className="bg-dark-800 border-t border-white/5 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-4 py-2">
+          <div className="flex items-center gap-4 py-2 max-sm:gap-2 max-sm:py-1">
             <img
               src={thumbnail}
               alt={currentSong.title}
-              className="w-12 h-12 rounded object-cover shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
+              className="w-12 h-12 rounded object-cover shadow-lg cursor-pointer hover:opacity-80 transition-opacity max-sm:hidden"
               onClick={() => currentSong.id && navigate(`/funfact/${currentSong.id}`)}
               onError={(e) => {
                 e.target.src = `https://img.youtube.com/vi/${thumbId}/default.jpg`;
@@ -257,19 +257,19 @@ export default function Player() {
                 {currentSong.artist}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 max-sm:gap-1">
               <button
                 onClick={toggleQueue}
-                className={`w-9 h-9 flex items-center justify-center transition-colors rounded-lg relative ${
+                className={`w-9 h-9 max-sm:w-7 max-sm:h-7 flex items-center justify-center transition-colors rounded-lg relative ${
                   queueOpen
                     ? "text-primary bg-primary/10"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
                 }`}
                 title="Queue"
               >
-                <FaListUl size={14} />
+                <FaListUl size={14} className="max-sm:text-[11px]" />
                 {queue.length > 0 && (
-                  <span className="absolute -top-1 -right-1 text-[9px] text-white bg-primary w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute -top-1 -right-1 text-[9px] text-white bg-primary w-4 h-4 max-sm:w-3 max-sm:h-3 rounded-full flex items-center justify-center font-bold">
                     {queue.length}
                   </span>
                 )}
@@ -281,31 +281,31 @@ export default function Player() {
                   }
                   onSongEnd();
                 }}
-                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                className="w-9 h-9 max-sm:w-7 max-sm:h-7 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
                 title="Skip to next"
               >
-                <FaStepForward size={13} />
+                <FaStepForward size={13} className="max-sm:text-[11px]" />
               </button>
               <button
                 onClick={togglePlay}
-                className="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-all"
+                className="w-10 h-10 max-sm:w-8 max-sm:h-8 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-all"
               >
                 {isPlaying ? (
-                  <FaPause className="text-white text-sm" />
+                  <FaPause className="text-white text-sm max-sm:text-xs" />
                 ) : (
-                  <FaPlay className="text-white text-sm ml-0.5" />
+                  <FaPlay className="text-white text-sm ml-0.5 max-sm:text-xs" />
                 )}
               </button>
               <button
                 onClick={handleClose}
-                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/10"
+                className="w-9 h-9 max-sm:w-7 max-sm:h-7 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/10"
               >
-                <FaTimes />
+                <FaTimes className="max-sm:text-[11px]" />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pb-2">
+          <div className="flex items-center gap-3 pb-2 max-sm:gap-1 max-sm:pb-1">
             <span className="text-xs text-gray-500 w-10 text-right tabular-nums">
               {formatTime(progress)}
             </span>
