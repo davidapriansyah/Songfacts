@@ -3,9 +3,6 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import toast from "../utils/toast";
 import { usePlayer } from "../context/PlayerContext";
-import { useRoom } from "../context/RoomContext";
-import CreateRoomModal from "../components/CreateRoomModal";
-import JoinRoomModal from "../components/JoinRoomModal";
 import {
   FaSearch,
   FaMicrophone,
@@ -17,7 +14,6 @@ import {
   FaMusic,
   FaChevronLeft,
   FaChevronRight,
-  FaUsers,
 } from "react-icons/fa";
 
 const GENRE_COLORS = {
@@ -105,31 +101,6 @@ export default function HomePage() {
   const [savingSong, setSavingSong] = useState(null);
   const navigate = useNavigate();
   const { addToQueue, playSong, playNextFromList } = usePlayer();
-  const { createRoom, joinRoom } = useRoom();
-
-  const [showCreateRoom, setShowCreateRoom] = useState(false);
-  const [showJoinRoom, setShowJoinRoom] = useState(false);
-
-  // Listen for Join Room event from Navbar
-  useEffect(() => {
-    const handler = () => setShowJoinRoom(true);
-    document.addEventListener("openJoinRoom", handler);
-    return () => document.removeEventListener("openJoinRoom", handler);
-  }, []);
-
-  async function handleCreateRoom(name) {
-    const room = await createRoom(name);
-    if (room?.code) {
-      navigate(`/room/${room.code}`);
-    }
-  }
-
-  async function handleJoinRoom(code) {
-    const room = await joinRoom(code);
-    if (room?.code) {
-      navigate(`/room/${room.code}`);
-    }
-  }
 
   const [genres, setGenres] = useState([]);
 
@@ -325,29 +296,6 @@ export default function HomePage() {
 
         {showHome && (
           <>
-            {/* Room Section */}
-            <section className="mb-10">
-              <div className="flex items-center gap-2 mb-4">
-                <FaUsers className="text-accent" />
-                <h2 className="text-xl font-bold text-white">Listening Room</h2>
-              </div>
-              <p className="text-gray-400 text-sm mb-4">Listen to music together with friends in real-time</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowCreateRoom(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-accent transition-all font-medium"
-                >
-                  <FaPlus /> Create Room
-                </button>
-                <button
-                  onClick={() => setShowJoinRoom(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/5 text-white border border-white/10 rounded-xl hover:bg-white/10 transition-all font-medium"
-                >
-                  <FaUsers /> Join Room
-                </button>
-              </div>
-            </section>
-
             {/* Recommendations Carousel */}
             <CarouselSection
               title="Recommended for You"
@@ -442,18 +390,6 @@ export default function HomePage() {
           </div>
         )}
       </div>
-
-      {/* Room Modals */}
-      <CreateRoomModal
-        isOpen={showCreateRoom}
-        onClose={() => setShowCreateRoom(false)}
-        onCreate={handleCreateRoom}
-      />
-      <JoinRoomModal
-        isOpen={showJoinRoom}
-        onClose={() => setShowJoinRoom(false)}
-        onJoin={handleJoinRoom}
-      />
     </div>
   );
 }

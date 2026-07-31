@@ -7,7 +7,6 @@ import GenrePage from "../pages/GenrePage";
 import Funfact from "../pages/Funfact";
 import Favorites from "../pages/Favorites";
 import Profile from "../pages/Profile";
-import RoomPage from "../pages/RoomPage";
 
 const router = createBrowserRouter([
   {
@@ -60,16 +59,6 @@ const router = createBrowserRouter([
         element: <Profile />,
       },
     ],
-  },
-  {
-    path: "/room/:code",
-    element: <RoomPage />,
-    loader: () => {
-      if (!localStorage.getItem("token")) {
-        return redirect("/login");
-      }
-      return null;
-    },
   },
 ]);
 

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaHome, FaHeart, FaUserCircle, FaSignOutAlt, FaMusic, FaBars, FaTimes, FaUsers, FaDownload } from "react-icons/fa";
+import { FaHome, FaHeart, FaUserCircle, FaSignOutAlt, FaMusic, FaBars, FaTimes, FaDownload } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import logo from "../assets/logo.png";
 
@@ -86,16 +86,6 @@ export default function Navbar() {
             )}
             {isLoggedIn ? (
               <>
-                <Link
-                  to="/"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.dispatchEvent(new CustomEvent("openJoinRoom"));
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent/20 text-accent rounded-lg hover:bg-accent/30 transition-all text-sm font-medium"
-                >
-                  <FaUsers /> Join Room
-                </Link>
                 <span className="text-sm text-gray-400">{user?.email}</span>
                 <button
                   onClick={handleLogout}
@@ -143,17 +133,6 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            {isLoggedIn && (
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  document.dispatchEvent(new CustomEvent("openJoinRoom"));
-                }}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-accent hover:bg-accent/10 transition-all"
-              >
-                <FaUsers /> Join Room
-              </button>
-            )}
             {installPrompt && (
               <button
                 onClick={() => { handleInstall(); setIsOpen(false); }}
