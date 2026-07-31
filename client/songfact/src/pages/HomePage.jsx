@@ -41,7 +41,7 @@ function getGenreColor(genre) {
   return GENRE_COLORS[genre] || GENRE_COLORS.default;
 }
 
-function CarouselSection({ title, icon, songs, onPlay, onQueue, renderCard }) {
+function CarouselSection({ title, icon, songs, loading, onPlay, onQueue, renderCard }) {
   const scrollRef = useRef(null);
 
   const scroll = (dir) => {
@@ -49,6 +49,28 @@ function CarouselSection({ title, icon, songs, onPlay, onQueue, renderCard }) {
     const amount = scrollRef.current.offsetWidth - 80;
     scrollRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
+
+  if (loading) {
+    return (
+      <section className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          {icon}
+          <h2 className="text-xl font-bold text-white">{title}</h2>
+        </div>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex-shrink-0 w-40 sm:w-44">
+              <div className="glass rounded-lg p-3 space-y-2">
+                <div className="shimmer w-full aspect-square rounded" />
+                <div className="shimmer h-4 w-3/4 rounded" />
+                <div className="shimmer h-3 w-1/2 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   if (!songs || songs.length === 0) return null;
 
@@ -301,6 +323,7 @@ export default function HomePage() {
               title="Recommended for You"
               icon={<FaMusic className="text-primary" />}
               songs={aiSongs}
+              loading={aiLoading}
               onPlay={handlePlaySong}
               onQueue={handleAddToQueue}
               renderCard={(song, i) => (
