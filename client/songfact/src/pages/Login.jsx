@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
 import toast from "../utils/toast";
 import logo from "../assets/logo.png";
 import api from "../services/api";
@@ -11,7 +11,15 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (window.location.hash && (window.location.hash.includes("credential=") || window.location.hash.includes("id_token="))) {
+      setGoogleLoading(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,6 +38,7 @@ export default function Login() {
   }
 
   async function googleLogin(codeResponse) {
+    setGoogleLoading(true);
     try {
       const payload = JSON.parse(atob(codeResponse.credential.split('.')[1]));
       const { data } = await api.post("/auth/login-google", {
@@ -43,11 +52,20 @@ export default function Login() {
       navigate("/");
     } catch (error) {
       toast.error("Google login failed");
+      setGoogleLoading(false);
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {googleLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark-900/90 backdrop-blur-sm">
+          <div className="text-center">
+            <FaSpinner className="animate-spin text-primary text-4xl mx-auto" />
+            <p className="mt-4 text-white font-medium">Signing you in...</p>
+          </div>
+        </div>
+      )}
       <div className="absolute inset-0 bg-gradient-to-br from-dark-700/20 via-dark-900 to-dark-500/20" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl" />
