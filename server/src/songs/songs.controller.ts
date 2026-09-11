@@ -32,15 +32,6 @@ export class SongsController {
     );
   }
 
-  @Get('stream-url')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Resolve direct stream URL for a YouTube video (cached 30 min)' })
-  async getStreamUrl(@Query('videoId') videoId: string) {
-    const url = await this.streamService.resolveStreamUrl(String(videoId || ''));
-    return { url };
-  }
-
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

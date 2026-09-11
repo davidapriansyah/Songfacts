@@ -2,19 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
     super({
-      jwtFromRequest: (request: Request) => {
-        // 1. Bearer token in Authorization header (normal API calls)
-        const header = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
-        if (header) return header;
-        // 2. token query param (for <audio> elements that can't set headers)
-        return ExtractJwt.fromUrlQueryParameter('token')(request);
-      },
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET'),
     });
