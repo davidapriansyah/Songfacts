@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayer } from "../context/PlayerContext";
+import { resolveStreamUrl, getCachedStreamUrl } from "../services/stream";
+import { warmUpMedia } from "../utils/mediaWarmup";
 import {
   FaPlay,
   FaPause,
@@ -9,6 +11,11 @@ import {
   FaTrash,
   FaStepForward,
 } from "react-icons/fa";
+
+const STREAM_BASE_URL = `${(import.meta.env.VITE_API_URL || "/api").replace(
+  /\/$/,
+  ""
+)}/songs/stream`;
 
 function formatTime(seconds) {
   if (!seconds || isNaN(seconds)) return "0:00";
@@ -27,7 +34,6 @@ export default function Player() {
     setIsPlaying,
     queue,
     queueOpen,
-    addToQueue,
     removeFromQueue,
     clearQueue,
     toggleQueue,
@@ -36,112 +42,170 @@ export default function Player() {
 
   const navigate = useNavigate();
 
-  const containerRef = useRef(null);
-  const playerRef = useRef(null);
+  const audioRef = useRef(null);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
   const progressInterval = useRef(null);
+  const isPlayingRef = useRef(false);
+  const onSongEndRef = useRef(null);
+  const forceUnmuteRef = useRef(false);
+  const advancingRef = useRef(false);
+  isPlayingRef.current = isPlaying;
+  onSongEndRef.current = onSongEnd;
 
   const videoId = currentSong?.youtubeId || currentSong?.videoId;
 
   useEffect(() => {
-    if (!containerRef.current || !videoId) return;
+    // If the tab becomes visible again and the audio unexpectedly paused
+    // (e.g. an advance happened while hidden), force it back to playing.
+    const onVisibility = () => {
+      if (document.hidden) return;
+      ensurePlaying();
+    };
+    // A play() request can get rejected when the stream URL resolve (yt-dlp)
+    // finishes after the click's user-activation window expires. Prime the
+    // browser's media-activation on the very first gesture (muted, silent),
+    // then resume on the next interaction / focus so one extra tap is never
+    // required.
+    const onGesture = () => {
+      warmUpMedia();
+      if (document.visibilityState === "hidden") return;
+      ensurePlaying();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("pointerdown", onGesture);
+    document.addEventListener("keydown", onGesture);
+    window.addEventListener("focus", onGesture);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("pointerdown", onGesture);
+      document.removeEventListener("keydown", onGesture);
+      window.removeEventListener("focus", onGesture);
+    };
+  }, []);
+
+  const ensurePlaying = () => {
+    const audio = audioRef.current;
+    if (!audio || !isPlayingRef.current) return;
+    if (audio.paused && audio.src) {
+      audio.play().catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    if (!videoId) return;
     setReady(false);
     setProgress(0);
     setDuration(0);
+    advancingRef.current = false;
 
-    if (playerRef.current && playerRef.current.destroy) {
-      playerRef.current.destroy();
+    if (progressInterval.current) {
+      clearInterval(progressInterval.current);
+      progressInterval.current = null;
     }
 
-    containerRef.current.innerHTML = "";
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    if (!window.YT) {
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.head.appendChild(tag);
-    }
+    // Synchronous source selection: cached direct URL or proxy stream (with
+    // token in query so the <audio> element can authenticate). No await here
+    // so that audio.play() runs inside the click's user-activation window.
+    const cachedUrl = getCachedStreamUrl(videoId);
+    const token = localStorage.getItem("token");
+    const audioSrc =
+      cachedUrl ||
+      `${STREAM_BASE_URL}?videoId=${videoId}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
 
-    function createPlayer() {
-      if (!containerRef.current) return;
-      playerRef.current = new window.YT.Player(containerRef.current, {
-        videoId,
-        width: 1,
-        height: 1,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          iv_load_policy: 3,
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0,
-        },
-        events: {
-          onReady: () => {
-            setReady(true);
-            setDuration(playerRef.current.getDuration());
-          },
-          onStateChange: (e) => {
-            if (e.data === window.YT.PlayerState.PLAYING) {
-              setIsPlaying(true);
-              setDuration(playerRef.current.getDuration());
-            } else if (e.data === window.YT.PlayerState.PAUSED) {
-              setIsPlaying(false);
-            } else if (e.data === window.YT.PlayerState.ENDED) {
-              setProgress(0);
-              setReady(false);
-              onSongEnd();
-            }
-          },
-        },
-      });
-    }
+    audio.src = audioSrc;
+    audio.muted = true;
+    forceUnmuteRef.current = true;
+    audio.load();
 
-    if (window.YT && window.YT.Player) {
-      createPlayer();
-    } else {
-      window.onYouTubeIframeAPIReady = createPlayer;
-    }
-
-    return () => {
-      if (playerRef.current && playerRef.current.destroy) {
-        playerRef.current.destroy();
-        playerRef.current = null;
+    const tryPlay = () => {
+      if (isPlayingRef.current) {
+        audio.play().catch(() => {});
       }
     };
+    audio.addEventListener("canplay", tryPlay, { once: true });
+    tryPlay();
+    setReady(true);
+
+    // In background: resolve direct URL for future use (cache hit next time)
+    resolveStreamUrl(videoId).catch(() => {});
   }, [videoId, playKey]);
 
   useEffect(() => {
-    if (!ready || !playerRef.current) return;
+    const audio = audioRef.current;
+    if (!audio || !ready) return;
 
     if (isPlaying) {
-      playerRef.current.playVideo();
-      progressInterval.current = setInterval(() => {
-        if (playerRef.current && playerRef.current.getCurrentTime) {
-          setProgress(playerRef.current.getCurrentTime());
-        }
-      }, 500);
+      const start = () => audio.play().catch(() => {});
+      audio.addEventListener("canplay", start, { once: true });
+      start();
+      if (!progressInterval.current) {
+        progressInterval.current = setInterval(() => {
+          if (audioRef.current) setProgress(audioRef.current.currentTime);
+        }, 500);
+      }
     } else {
-      playerRef.current.pauseVideo();
+      audio.pause();
       if (progressInterval.current) {
         clearInterval(progressInterval.current);
+        progressInterval.current = null;
       }
     }
 
     return () => {
       if (progressInterval.current) {
         clearInterval(progressInterval.current);
+        progressInterval.current = null;
       }
     };
   }, [isPlaying, ready]);
 
+  const handleAudioPlaying = () => {
+    const audio = audioRef.current;
+    setIsPlaying(true);
+    if (audio?.duration) setDuration(audio.duration);
+    // Started muted to satisfy browser autoplay rules; restore sound once running.
+    if (forceUnmuteRef.current && audio) {
+      audio.muted = false;
+      forceUnmuteRef.current = false;
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setProgress(0);
+    setReady(false);
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    onSongEnd();
+  };
+
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setProgress(audio.currentTime);
+    // Background-tab-safe fallback: advance near the end even if the audio
+    // element's `ended` event is delayed.
+    if (
+      !advancingRef.current &&
+      isPlayingRef.current &&
+      audio.duration > 0 &&
+      audio.currentTime >= audio.duration - 1
+    ) {
+      advancingRef.current = true;
+      onSongEnd();
+    }
+  };
+
   function handleClose() {
-    if (playerRef.current && playerRef.current.destroy) {
-      playerRef.current.destroy();
-      playerRef.current = null;
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
     }
     setProgress(0);
     setDuration(0);
@@ -150,12 +214,13 @@ export default function Player() {
   }
 
   function handleProgressClick(e) {
-    if (!playerRef.current || !duration) return;
+    const audio = audioRef.current;
+    if (!audio || !duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percent = x / rect.width;
     const seekTo = percent * duration;
-    playerRef.current.seekTo(seekTo, true);
+    audio.currentTime = seekTo;
     setProgress(seekTo);
   }
 
@@ -169,7 +234,19 @@ export default function Player() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
-      <div ref={containerRef} className="hidden" />
+      <audio
+        ref={audioRef}
+        className="hidden"
+        preload="auto"
+        onPlaying={handleAudioPlaying}
+        onPause={() => setIsPlaying(false)}
+        onEnded={handleAudioEnded}
+        onLoadedMetadata={() => {
+          const d = audioRef.current?.duration;
+          if (d && !isNaN(d)) setDuration(d);
+        }}
+        onTimeUpdate={handleTimeUpdate}
+      />
 
       {queueOpen && (
         <div className="absolute bottom-full right-0 w-80 max-w-full max-h-[40vh] bg-dark-800 border border-white/10 rounded-t-xl shadow-2xl overflow-hidden flex flex-col">
@@ -276,9 +353,7 @@ export default function Player() {
               </button>
               <button
                 onClick={() => {
-                  if (playerRef.current && playerRef.current.stopVideo) {
-                    playerRef.current.stopVideo();
-                  }
+                  advancingRef.current = false;
                   onSongEnd();
                 }}
                 className="w-9 h-9 max-sm:w-7 max-sm:h-7 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"

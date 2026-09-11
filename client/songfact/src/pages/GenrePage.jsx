@@ -40,7 +40,7 @@ function getGenreColor(genre) {
 export default function GenrePage() {
   const { genreName } = useParams();
   const navigate = useNavigate();
-  const { playSong, playNextFromList, addToQueue } = usePlayer();
+  const { playSong, addToQueue, isSongInQueue } = usePlayer();
 
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,32 +92,30 @@ export default function GenrePage() {
     fetchFavorites();
   }, [fetchGenreSongs, fetchFavorites]);
 
-  const handlePlaySong = async (song, index) => {
-    let songToPlay = song;
+  const handlePlaySong = (song, index) => {
+    // Play immediately — never block playback on the save call.
+    playSong(song, songs, index, "random");
+
+    // Persist unsaved YouTube songs in the background, then merge the DB id
+    // into the list so it shows in the library on the next visit.
     if (!song.id && song.videoId) {
-      try {
-        setSavingSong(song.videoId);
-        const { data } = await api.post("/songs/save-from-cache", {
+      api
+        .post("/songs/save-from-cache", {
           videoId: song.videoId,
           title: song.title,
           artist: song.artist,
           albumCover: song.albumCover || song.thumbnail,
-        });
-        songToPlay = { ...song, id: data.id, ...data };
-        setSongs((prev) =>
-          prev.map((s) =>
-            s.videoId === song.videoId ? { ...s, id: data.id } : s
-          )
-        );
-      } catch (error) {
-        console.error("Failed to save song:", error);
-      } finally {
-        setSavingSong(null);
-      }
+        })
+        .then(({ data }) => {
+          if (!data?.id) return;
+          setSongs((prev) =>
+            prev.map((s) =>
+              s.videoId === song.videoId ? { ...s, id: data.id } : s
+            )
+          );
+        })
+        .catch((error) => console.error("Failed to save song:", error));
     }
-
-    playNextFromList(songs, index);
-    playSong(songToPlay);
   };
 
   const handleAddFavorite = async (e, song) => {
@@ -202,6 +200,7 @@ export default function GenrePage() {
                 onPlay={() => handlePlaySong(song, index)}
                 onQueue={handleAddToQueue}
                 saving={savingSong === (song.videoId || song.id)}
+                isInQueue={isSongInQueue(song.id || song.videoId)}
               />
             ))}
           </div>
@@ -211,7 +210,7 @@ export default function GenrePage() {
   );
 }
 
-function SongRow({ song, index, isFavorite, isAddingFav, onAddFavorite, onPlay, onQueue, saving }) {
+function SongRow({ song, index, isFavorite, isAddingFav, onAddFavorite, onPlay, onQueue, saving, isInQueue }) {
   const [hovered, setHovered] = useState(false);
   const thumbnail = song.albumCover || song.thumbnail || `https://img.youtube.com/vi/${song.youtubeId || song.videoId}/default.jpg`;
 
@@ -238,8 +237,8 @@ function SongRow({ song, index, isFavorite, isAddingFav, onAddFavorite, onPlay, 
       <span className="song-album hidden md:block">{song.album || "-"}</span>
       <div className="flex items-center justify-end gap-1">
         {song.id && (
-          <button onClick={(e) => onQueue(e, song)} className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Add to queue">
-            <FaListUl size={12} />
+          <button onClick={(e) => onQueue(e, song)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${isInQueue ? "text-primary" : "text-gray-500 hover:text-primary hover:bg-primary/10"}`} title={isInQueue ? "Already in queue" : "Add to queue"}>
+            {isInQueue ? <FaCheck size={12} /> : <FaListUl size={12} />}
           </button>
         )}
         {song.id && (

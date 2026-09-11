@@ -122,7 +122,7 @@ export default function HomePage() {
   const [addingFav, setAddingFav] = useState(null);
   const [savingSong, setSavingSong] = useState(null);
   const navigate = useNavigate();
-  const { addToQueue, playSong, playNextFromList } = usePlayer();
+  const { addToQueue, playSong, isSongInQueue } = usePlayer();
 
   const [genres, setGenres] = useState([]);
 
@@ -190,37 +190,48 @@ export default function HomePage() {
     }
   }, [search]);
 
-  const handlePlaySong = async (song, songList, index) => {
-    let songToPlay = song;
+  const handlePlaySong = (song, songList, index) => {
+    // Play immediately — never block playback on the save call. The player
+    // uses the proxy stream URL (no resolve needed) so audio starts within the
+    // click's user-activation window.
+    if (songList && index !== undefined) {
+      const updatedList = songList.map((s, i) => (i === index ? song : s));
+      playSong(song, updatedList, index, "random");
+    } else {
+      playSong(song);
+    }
+
+    // Persist unsaved YouTube songs in the background (without pausing the
+    // currently playing track). On success, merge the new DB id into the list
+    // and silently refresh so the song shows up without a manual reload.
     if (!song.id && song.videoId) {
-      try {
-        setSavingSong(song.videoId);
-        const { data } = await api.post("/songs/save-from-cache", {
+      api
+        .post("/songs/save-from-cache", {
           videoId: song.videoId,
           title: song.title,
           artist: song.artist,
           albumCover: song.albumCover || song.thumbnail,
-        });
-        songToPlay = { ...song, id: data.id, ...data };
-        setSongs((prev) =>
-          prev.map((s) =>
-            s.videoId === song.videoId ? { ...s, id: data.id } : s
-          )
-        );
-      } catch (error) {
-        console.error("Failed to save song:", error);
-      } finally {
-        setSavingSong(null);
-      }
+        })
+        .then(({ data }) => {
+          const savedId = data?.id;
+          if (!savedId) return;
+          setSongs((prev) =>
+            prev.map((s) =>
+              s.videoId === song.videoId ? { ...s, id: savedId } : s
+            )
+          );
+          setSearchResults((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              songs: (prev.songs || []).map((s) =>
+                s.videoId === song.videoId ? { ...s, id: savedId } : s
+              ),
+            };
+          });
+        })
+        .catch((error) => console.error("Failed to save song:", error));
     }
-
-    if (songList && index !== undefined && !isSearchMode) {
-      const updatedList = songList.map((s, i) =>
-        i === index ? songToPlay : s
-      );
-      playNextFromList(updatedList, index);
-    }
-    playSong(songToPlay);
   };
 
   const handleAddFavorite = async (e, song) => {
@@ -334,6 +345,7 @@ export default function HomePage() {
                   isFavorite={favoriteIds.has(song.id)}
                   onFav={handleAddFavorite}
                   addingFav={addingFav === song.id}
+                  isInQueue={isSongInQueue(song.id || song.videoId)}
                 />
               )}
             />
@@ -399,6 +411,7 @@ export default function HomePage() {
                   onPlay={(s) => handlePlaySong(s, currentList, index)}
                   onQueue={handleAddToQueue}
                   saving={savingSong === (song.videoId || song.id)}
+                  isInQueue={isSongInQueue(song.id || song.videoId)}
                 />
                 );
               })}
@@ -417,7 +430,7 @@ export default function HomePage() {
   );
 }
 
-function AiSongCard({ song, onPlay, onQueue }) {
+function AiSongCard({ song, onPlay, onQueue, isInQueue }) {
   const thumbnail = song.albumCover || `https://img.youtube.com/vi/${song.youtubeId || song.videoId}/default.jpg`;
 
   return (
@@ -428,8 +441,8 @@ function AiSongCard({ song, onPlay, onQueue }) {
           <span className="absolute top-2 left-2 text-[9px] bg-primary/80 text-white px-1.5 py-0.5 rounded font-bold">NEW</span>
         )}
         <div className="absolute bottom-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
-          <button onClick={(e) => { e.stopPropagation(); onQueue(e, song); }} className="w-8 h-8 bg-dark-800/80 rounded-full flex items-center justify-center hover:bg-primary transition-all shadow-lg">
-            <FaListUl className="text-white text-xs" />
+          <button onClick={(e) => { e.stopPropagation(); onQueue(e, song); }} className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg ${isInQueue ? "bg-primary text-white" : "bg-dark-800/80 text-white hover:bg-primary"}`}>
+            {isInQueue ? <FaCheck className="text-xs" /> : <FaListUl className="text-xs" />}
           </button>
           <button onClick={(e) => { e.stopPropagation(); onPlay(song); }} className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-accent">
             <FaPlay className="text-white text-sm ml-0.5" />
@@ -442,7 +455,7 @@ function AiSongCard({ song, onPlay, onQueue }) {
   );
 }
 
-function SongRow({ song, index, isFavorite, isAddingFav, onAddFavorite, onPlay, onQueue, saving }) {
+function SongRow({ song, index, isFavorite, isAddingFav, onAddFavorite, onPlay, onQueue, saving, isInQueue }) {
   const [hovered, setHovered] = useState(false);
   const thumbnail = song.albumCover || song.thumbnail || `https://img.youtube.com/vi/${song.youtubeId || song.videoId}/default.jpg`;
 
@@ -468,8 +481,8 @@ function SongRow({ song, index, isFavorite, isAddingFav, onAddFavorite, onPlay, 
       </div>
       <span className="song-album hidden md:block">{song.album || "-"}</span>
       <div className="flex items-center justify-end gap-1">
-        <button onClick={(e) => onQueue(e, song)} className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Add to queue">
-          <FaListUl size={12} />
+        <button onClick={(e) => onQueue(e, song)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${isInQueue ? "text-primary" : "text-gray-500 hover:text-primary hover:bg-primary/10"}`} title={isInQueue ? "Already in queue" : "Add to queue"}>
+          {isInQueue ? <FaCheck size={12} /> : <FaListUl size={12} />}
         </button>
         {song.id && (
           <button

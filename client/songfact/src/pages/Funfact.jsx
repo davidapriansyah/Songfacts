@@ -12,13 +12,14 @@ import {
   FaPause,
   FaListUl,
   FaPlus,
+  FaCheck,
   FaExternalLinkAlt,
 } from "react-icons/fa";
 
 export default function Funfact() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentSong, isPlaying, playSong, togglePlay, addToQueue, clearQueue, replaceQueue, setRecommendations: setRecsForPlayer } =
+  const { currentSong, isPlaying, playSong, togglePlay, addToQueue, clearQueue, setPlaySource, isSongInQueue } =
     usePlayer();
   const [song, setSong] = useState(null);
   const [funFacts, setFunFacts] = useState(null);
@@ -63,13 +64,12 @@ export default function Funfact() {
       .then(({ data }) => {
         setRecs(data);
         if (data.length > 0) {
-          setRecsForPlayer(song.id, data);
-          replaceQueue(data);
+          setPlaySource(data, "random");
         }
       })
       .catch(() => {})
       .finally(() => setRecLoading(false));
-  }, [song?.id, setRecsForPlayer]);
+  }, [song?.id, setPlaySource]);
 
   const isCurrentSong =
     currentSong &&
@@ -181,9 +181,13 @@ export default function Funfact() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={handleAddToQueue}
-            className="flex items-center gap-2 px-4 py-2.5 bg-dark-800 border border-white/10 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+            className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm transition-all ${
+              isSongInQueue(song.id)
+                ? "bg-primary/20 border-primary/30 text-primary"
+                : "bg-dark-800 border-white/10 text-gray-300 hover:text-white hover:bg-white/10"
+            }`}
           >
-            <FaListUl size={14} /> Add to Queue
+            {isSongInQueue(song.id) ? <><FaCheck size={14} /> In Queue</> : <><FaListUl size={14} /> Add to Queue</>}
           </button>
         </div>
 

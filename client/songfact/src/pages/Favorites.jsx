@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { usePlayer } from "../context/PlayerContext";
-import { FaPlay, FaTrash, FaHeart, FaMusic, FaListUl } from "react-icons/fa";
+import { FaPlay, FaTrash, FaHeart, FaMusic, FaListUl, FaCheck } from "react-icons/fa";
 import toast from "../utils/toast";
 
 export default function Favorites() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { addToQueue, playSong, playNextFromList } = usePlayer();
+  const { addToQueue, playSong, isSongInQueue } = usePlayer();
 
   async function fetchFavorites() {
     try {
@@ -92,11 +92,12 @@ export default function Favorites() {
                     className="song-row cursor-pointer group"
                     style={{ gridTemplateColumns: "40px 48px 1fr 1fr 80px" }}
                     onClick={() => {
-                      playNextFromList(
+                      playSong(
+                        song,
                         favorites.map((f) => f.Song || f.song).filter(Boolean),
-                        index
+                        index,
+                        "sequential"
                       );
-                      playSong(song);
                     }}
                     onDoubleClick={() => navigate(`/funfact/${song.id}`)}
                   >
@@ -128,10 +129,10 @@ export default function Favorites() {
                           addToQueue(song);
                           toast.success(`Added "${song.title}" to queue`);
                         }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
-                        title="Add to queue"
+                        className={`w-8 h-8 flex items-center justify-center rounded-full transition-all opacity-0 group-hover:opacity-100 ${isSongInQueue(song.id || song.youtubeId) ? "text-primary" : "text-gray-500 hover:text-white hover:bg-white/10"}`}
+                        title={isSongInQueue(song.id || song.youtubeId) ? "Already in queue" : "Add to queue"}
                       >
-                        <FaListUl size={12} />
+                        {isSongInQueue(song.id || song.youtubeId) ? <FaCheck size={12} /> : <FaListUl size={12} />}
                       </button>
                       <button
                         onClick={(e) => {
