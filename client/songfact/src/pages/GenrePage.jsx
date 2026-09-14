@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { warmStreamUrls } from "../services/stream";
 import toast from "../utils/toast";
 import { usePlayer } from "../context/PlayerContext";
 import {
@@ -91,6 +92,12 @@ export default function GenrePage() {
     fetchGenreSongs();
     fetchFavorites();
   }, [fetchGenreSongs, fetchFavorites]);
+
+  // Pre-warm the top results so playback starts instantly on click.
+  useEffect(() => {
+    if (songs.length === 0) return;
+    warmStreamUrls(songs, 2);
+  }, [songs]);
 
   const handlePlaySong = (song, index) => {
     // Play immediately — never block playback on the save call.

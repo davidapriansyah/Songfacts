@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { warmStreamUrls } from "../services/stream";
 import toast from "../utils/toast";
 import { usePlayer } from "../context/PlayerContext";
 import {
@@ -280,6 +281,13 @@ export default function HomePage() {
     const timer = setTimeout(() => handleSearch(), 500);
     return () => clearTimeout(timer);
   }, [search, handleSearch]);
+
+  // Pre-warm the top search results so the remuxed files are ready server-side
+  // by the time the user clicks play (kills the ~10s first-play lag).
+  useEffect(() => {
+    if (!searchResults?.songs) return;
+    warmStreamUrls(searchResults.songs, 2);
+  }, [searchResults]);
 
   const handleSpeechRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

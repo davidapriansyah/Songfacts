@@ -24,3 +24,15 @@ export async function resolveStreamUrl(videoId) {
   }
   return null;
 }
+
+// Fire-and-forget warm-up for the top results as soon as they appear, so the
+// remuxed file is already cached on the server by the time the user clicks play.
+export function warmStreamUrls(songs, limit = 2) {
+  if (!Array.isArray(songs)) return;
+  songs
+    .filter((s) => s && (s.videoId || s.youtubeId))
+    .slice(0, limit)
+    .forEach((s) => {
+      resolveStreamUrl(s.videoId || s.youtubeId).catch(() => {});
+    });
+}
