@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { usePlayer } from "../context/PlayerContext";
@@ -29,6 +29,8 @@ export default function Funfact() {
   const [recs, setRecs] = useState([]);
   const [recLoading, setRecLoading] = useState(false);
   const [savingRec, setSavingRec] = useState(null);
+  const currentSongRef = useRef(currentSong);
+  currentSongRef.current = currentSong;
 
   useEffect(() => {
     async function fetchData() {
@@ -43,7 +45,15 @@ export default function Funfact() {
           const songData = songRes.value.data;
           setSong(songData);
           clearQueue();
-          playSong(songData);
+          // Only (re)start playback when this is a different song — opening
+          // the detail of the currently playing track must not restart it.
+          const cur = currentSongRef.current;
+          const isSame =
+            cur &&
+            (cur.id === songData.id ||
+              cur.youtubeId === songData.youtubeId ||
+              cur.videoId === songData.videoId);
+          if (!isSame) playSong(songData);
         }
         if (factsRes.status === "fulfilled") setFunFacts(factsRes.value.data);
         if (lyricsRes.status === "fulfilled") setLyrics(lyricsRes.value.data);
