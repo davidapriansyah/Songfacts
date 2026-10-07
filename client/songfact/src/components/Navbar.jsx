@@ -3,28 +3,38 @@ import { FaHome, FaHeart, FaUserCircle, FaSignOutAlt, FaMusic, FaBars, FaTimes, 
 import { useState, useEffect } from "react";
 import logo from "../assets/logo.png";
 
+const APK_URL = "/app/bloop.apk";
+
+// Only the Android build is published, so iOS visitors get no download button.
+const IS_IOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [installPrompt, setInstallPrompt] = useState(null);
+  const [apkReady, setApkReady] = useState(false);
 
   useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
+    let cancelled = false;
+    // Vercel rewrites unknown paths to index.html, so a plain 404 check would
+    // come back as 200 with the app shell. Match on the APK content type so
+    // the button only shows up once the file is really deployed.
+    fetch(APK_URL, { method: "HEAD" })
+      .then((res) => {
+        if (cancelled) return;
+        const type = res.headers.get("content-type") || "";
+        setApkReady(res.ok && type.includes("android.package-archive"));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
     };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const result = await installPrompt.userChoice;
-    if (result.outcome === "accepted") setInstallPrompt(null);
-  };
+  const canDownload = apkReady && !IS_IOS;
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -79,10 +89,13 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            {installPrompt && (
-              <button onClick={handleInstall} className="flex items-center gap-2 px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-all text-sm font-medium">
-                <FaDownload /> Install
-              </button>
+            {canDownload && (
+              <a
+                href={APK_URL}
+                className="flex items-center gap-2 px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-all text-sm font-medium"
+              >
+                <FaDownload /> Download App
+              </a>
             )}
             {isLoggedIn ? (
               <>
@@ -133,13 +146,14 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            {installPrompt && (
-              <button
-                onClick={() => { handleInstall(); setIsOpen(false); }}
+            {canDownload && (
+              <a
+                href={APK_URL}
+                onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-all"
               >
-                <FaDownload /> Install App
-              </button>
+                <FaDownload /> Download App
+              </a>
             )}
             {isLoggedIn ? (
               <button
