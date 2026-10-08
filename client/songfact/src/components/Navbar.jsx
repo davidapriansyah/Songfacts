@@ -20,13 +20,18 @@ export default function Navbar() {
   useEffect(() => {
     let cancelled = false;
     // Vercel rewrites unknown paths to index.html, so a plain 404 check would
-    // come back as 200 with the app shell. Match on the APK content type so
-    // the button only shows up once the file is really deployed.
+    // come back as 200 with the app shell. The /app/* Content-Type header is
+    // applied before that rewrite too, so content type alone is not enough:
+    // the app shell is only 758 bytes, a real APK is orders of magnitude
+    // larger. Require both so the button appears only once the file is live.
     fetch(APK_URL, { method: "HEAD" })
       .then((res) => {
         if (cancelled) return;
         const type = res.headers.get("content-type") || "";
-        setApkReady(res.ok && type.includes("android.package-archive"));
+        const bytes = Number(res.headers.get("content-length")) || 0;
+        setApkReady(
+          res.ok && type.includes("android.package-archive") && bytes > 1_000_000
+        );
       })
       .catch(() => undefined);
     return () => {
